@@ -34,7 +34,7 @@ export default async function handler(req, res) {
 
     const { data: chunks, error: matchError } = await supabase.rpc('match_documents', {
       query_embedding: queryEmbedding,
-      match_threshold: 0.7,
+      match_threshold: 0.3,
       match_count: 5,
     });
 
