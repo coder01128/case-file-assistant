@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Case File Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0d0d0d;
+      color: #e0e0e0;
+      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 40px 0 24px;
+      border-bottom: 1px solid #2a2a2a;
+      margin-bottom: 24px;
+    }
+
+    header h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #f5f5f5;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      color: #888;
+      font-size: 14px;
+    }
+
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding-bottom: 24px;
+    }
+
+    .message {
+      margin-bottom: 20px;
+    }
+
+    .message-question {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-bottom: 12px;
+      color: #c8c8e0;
+      font-size: 14px;
+    }
+
+    .message-question::before {
+      content: 'You';
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #5b9cf5;
+      margin-bottom: 6px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .message-answer {
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      padding: 14px 18px;
+      color: #e0e0e0;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .message-answer::before {
+      content: 'Assistant';
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #5b9cf5;
+      margin-bottom: 6px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .message-error {
+      background: #1a1010;
+      border: 1px solid #3a2020;
+      color: #e08080;
+    }
+
+    .sources-panel {
+      margin-top: 12px;
+    }
+
+    .sources-header {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #888;
+      margin-bottom: 8px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .source-card {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .source-card:hover {
+      border-color: #3a3a3a;
+    }
+
+    .source-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .source-case-id {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      color: #5b9cf5;
+    }
+
+    .source-similarity {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      color: #6a6;
+      background: #0a1a0a;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .source-client {
+      font-size: 13px;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+
+    .source-text {
+      font-size: 13px;
+      color: #999;
+      line-height: 1.5;
+    }
+
+    .source-text.truncated {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .source-expand {
+      font-size: 12px;
+      color: #5b9cf5;
+      margin-top: 4px;
+      cursor: pointer;
+    }
+
+    .input-area {
+      position: sticky;
+      bottom: 0;
+      background: #0d0d0d;
+      padding: 16px 0 24px;
+      border-top: 1px solid #2a2a2a;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .input-row input {
+      flex: 1;
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      padding: 12px 16px;
+      color: #e0e0e0;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .input-row input:focus {
+      border-color: #5b9cf5;
+    }
+
+    .input-row input::placeholder {
+      color: #555;
+    }
+
+    .input-row input:disabled {
+      opacity: 0.5;
+    }
+
+    .input-row button {
+      background: #5b9cf5;
+      color: #0d0d0d;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 24px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .input-row button:hover {
+      background: #7bb3ff;
+    }
+
+    .input-row button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      color: #888;
+      font-size: 14px;
+    }
+
+    .loading-dot {
+      width: 8px;
+      height: 8px;
+      background: #5b9cf5;
+      border-radius: 50%;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: #555;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .empty-state p:first-child {
+      font-size: 16px;
+      color: #777;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Case File Assistant</h1>
+      <p>Ask questions about personal injury case files — answers grounded in actual documents.</p>
+    </header>
+
+    <div class="chat-area" id="chatArea">
+      <div class="empty-state" id="emptyState">
+        <p>Ask a question about any case file</p>
+        <p>Try: "Has the Martinez client had surgery?"<br>
+        "Which cases are with Henderson & Associates?"<br>
+        "What's the total funding across active car accident cases?"</p>
+      </div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-row">
+        <input type="text" id="questionInput" placeholder="Ask a question about case files..." autofocus>
+        <button id="sendBtn" onclick="submitQuestion()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const chatArea = document.getElementById('chatArea');
+    const emptyState = document.getElementById('emptyState');
+    const questionInput = document.getElementById('questionInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    questionInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !sendBtn.disabled) {
+        submitQuestion();
+      }
+    });
+
+    function setLoading(on) {
+      sendBtn.disabled = on;
+      questionInput.disabled = on;
+    }
+
+    function addQuestion(text) {
+      if (emptyState) emptyState.remove();
+      const div = document.createElement('div');
+      div.className = 'message';
+      div.innerHTML = '<div class="message-question">' + escapeHtml(text) + '</div>';
+      chatArea.appendChild(div);
+      return div;
+    }
+
+    function addLoading(container) {
+      const loader = document.createElement('div');
+      loader.className = 'loading';
+      loader.id = 'loader';
+      loader.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div><span>Searching case files...</span>';
+      container.appendChild(loader);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function removeLoading() {
+      const loader = document.getElementById('loader');
+      if (loader) loader.remove();
+    }
+
+    function addAnswer(container, answer, sources) {
+      const answerDiv = document.createElement('div');
+      answerDiv.className = 'message-answer';
+      answerDiv.textContent = answer;
+      container.appendChild(answerDiv);
+
+      if (sources && sources.length > 0) {
+        const panel = document.createElement('div');
+        panel.className = 'sources-panel';
+        panel.innerHTML = '<div class="sources-header">Sources (' + sources.length + ' matches)</div>';
+
+        sources.forEach((src) => {
+          const card = document.createElement('div');
+          card.className = 'source-card';
+
+          const similarity = Math.round(src.similarity * 100);
+          const truncatedText = src.chunk_text.length > 150
+            ? src.chunk_text.substring(0, 150) + '...'
+            : src.chunk_text;
+
+          card.innerHTML =
+            '<div class="source-card-header">' +
+              '<span class="source-case-id">' + escapeHtml(src.case_id) + '</span>' +
+              '<span class="source-similarity">' + similarity + '% match</span>' +
+            '</div>' +
+            '<div class="source-client">' + escapeHtml(src.client_name) + '</div>' +
+            '<div class="source-text truncated">' + escapeHtml(src.chunk_text) + '</div>' +
+            (src.chunk_text.length > 150 ? '<div class="source-expand">Show more</div>' : '');
+
+          card.addEventListener('click', () => {
+            const textEl = card.querySelector('.source-text');
+            const expandEl = card.querySelector('.source-expand');
+            if (textEl.classList.contains('truncated')) {
+              textEl.classList.remove('truncated');
+              if (expandEl) expandEl.textContent = 'Show less';
+            } else {
+              textEl.classList.add('truncated');
+              if (expandEl) expandEl.textContent = 'Show more';
+            }
+          });
+
+          panel.appendChild(card);
+        });
+
+        container.appendChild(panel);
+      }
+
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function addError(container, message) {
+      const div = document.createElement('div');
+      div.className = 'message-answer message-error';
+      div.textContent = message;
+      container.appendChild(div);
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    async function submitQuestion() {
+      const question = questionInput.value.trim();
+      if (!question) return;
+
+      questionInput.value = '';
+      setLoading(true);
+
+      const messageContainer = addQuestion(question);
+      addLoading(messageContainer);
+
+      try {
+        const response = await fetch('/api/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question }),
+        });
+
+        removeLoading();
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.error || 'Request failed with status ' + response.status);
+        }
+
+        const data = await response.json();
+        addAnswer(messageContainer, data.answer, data.sources);
+      } catch (err) {
+        removeLoading();
+        addError(messageContainer, err.message || 'Something went wrong. Please try again.');
+      } finally {
+        setLoading(false);
+        questionInput.focus();
+      }
+    }
+  </script>
+</body>
+</html>
