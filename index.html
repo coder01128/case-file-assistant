@@ -361,11 +361,18 @@
       container.appendChild(answerDiv);
 
       if (sources && sources.length > 0) {
+        const seen = {};
+        const deduped = sources.filter((src) => {
+          if (seen[src.case_id] ) return false;
+          seen[src.case_id] = true;
+          return true;
+        });
+
         const panel = document.createElement('div');
         panel.className = 'sources-panel';
-        panel.innerHTML = '<div class="sources-header">Sources (' + sources.length + ' matches)</div>';
+        panel.innerHTML = '<div class="sources-header">Sources (' + deduped.length + ' matches)</div>';
 
-        sources.forEach((src) => {
+        deduped.forEach((src) => {
           const card = document.createElement('div');
           card.className = 'source-card';
 

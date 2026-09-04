@@ -42,11 +42,19 @@ export default async function handler(req, res) {
       throw new Error(`Supabase match error: ${matchError.message}`);
     }
 
-    const hasResults = chunks && chunks.length > 0;
+    const seen = new Map();
+    for (const c of chunks || []) {
+      if (!seen.has(c.case_id) || c.similarity > seen.get(c.case_id).similarity) {
+        seen.set(c.case_id, c);
+      }
+    }
+    const dedupedChunks = [...seen.values()];
+
+    const hasResults = dedupedChunks.length > 0;
 
     let contextBlock = '';
     if (hasResults) {
-      contextBlock = chunks
+      contextBlock = dedupedChunks
         .map(
           (c) =>
             `--- CASE FILE EXCERPT ---\nCase ID: ${c.case_id}\nClient: ${c.client_name}\nContent: ${c.chunk_text}\n---`
@@ -70,7 +78,7 @@ ${contextBlock}`;
     const answer = message.content[0].text;
 
     const sources = hasResults
-      ? chunks.map((c) => ({
+      ? dedupedChunks.map((c) => ({
           case_id: c.case_id,
           client_name: c.client_name,
           chunk_text: c.chunk_text,
