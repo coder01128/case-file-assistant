@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case File Assistant — Build Checklist</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface-hover: #1c1c1c;
+    --border: #2a2a2a;
+    --border-active: #3a3a3a;
+    --text: #e0e0e0;
+    --text-dim: #888;
+    --text-bright: #f5f5f5;
+    --accent: #5b9cf5;
+    --accent-dim: rgba(91,156,245,0.12);
+    --green: #4ade80;
+    --green-dim: rgba(74,222,128,0.12);
+    --orange: #fb923c;
+    --orange-dim: rgba(251,146,60,0.12);
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', -apple-system, sans-serif;
+    --radius: 6px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  header {
+    margin-bottom: 2.5rem;
+  }
+
+  header h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-bright);
+    margin-bottom: 0.4rem;
+  }
+
+  header p {
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  /* Progress bar */
+  .progress-wrapper {
+    margin: 1.5rem 0 2.5rem;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 0.5rem;
+    font-family: var(--mono);
+  }
+
+  .progress-track {
+    width: 100%;
+    height: 6px;
+    background: var(--surface);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  .progress-fill.complete { background: var(--green); }
+
+  /* Phases */
+  .phase {
+    margin-bottom: 2rem;
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .phase-header h2 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.02em;
+  }
+
+  .phase-count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  /* Task cards */
+  .task {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .task:hover { border-color: var(--border-active); }
+  .task.done { opacity: 0.6; }
+  .task.done .task-title { text-decoration: line-through; color: var(--text-dim); }
+
+  .task-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .task-checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-active);
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .task-checkbox:hover { border-color: var(--accent); }
+
+  .task.done .task-checkbox {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  .task.done .task-checkbox::after {
+    content: '✓';
+    color: #000;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .task-title {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-bright);
+  }
+
+  .task-expand {
+    color: var(--text-dim);
+    font-size: 12px;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+
+  .task.open .task-expand { transform: rotate(180deg); }
+
+  .task-body {
+    display: none;
+    padding: 0 1rem 1rem 3.25rem;
+  }
+
+  .task.open .task-body { display: block; }
+
+  .task-body section {
+    margin-bottom: 1rem;
+  }
+
+  .task-body section:last-child { margin-bottom: 0; }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 0.35rem;
+    display: block;
+  }
+
+  .section-label.why { color: var(--orange); }
+  .section-label.learn { color: var(--green); }
+
+  .task-body p {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  .task-body a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .task-body a:hover { text-decoration: underline; }
+
+  pre.sql-block {
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #c8d3e0;
+    overflow-x: auto;
+    margin-top: 0.5rem;
+    white-space: pre;
+  }
+
+  .inline-code {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: rgba(91,156,245,0.08);
+    color: var(--accent);
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+  }
+
+  .steps-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 0.4rem;
+  }
+
+  .steps-list li {
+    font-size: 13.5px;
+    line-height: 1.65;
+    color: var(--text);
+    padding-left: 1.2rem;
+    position: relative;
+    margin-bottom: 0.2rem;
+  }
+
+  .steps-list li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--text-dim);
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 0.15em 0.5em;
+    border-radius: 3px;
+    margin-left: 0.5rem;
+  }
+
+  .tag.manual { background: var(--orange-dim); color: var(--orange); }
+  .tag.cc { background: var(--accent-dim); color: var(--accent); }
+  .tag.verify { background: var(--green-dim); color: var(--green); }
+
+  .divider-note {
+    text-align: center;
+    padding: 1rem;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-style: italic;
+  }
+
+  footer {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 12px;
+    font-family: var(--mono);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Case File Assistant — Build Checklist</h1>
+    <p>Every manual step before, during, and after the Claude Code build. Check them off as you go.</p>
+  </header>
+
+  <div class="progress-wrapper">
+    <div class="progress-label">
+      <span id="progress-text">0 / 0 complete</span>
+      <span id="progress-pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill"></div>
+    </div>
+  </div>
+
+  <div id="phases"></div>
+
+  <footer>case-file-assistant build checklist — state saved automatically</footer>
+</div>
+
+<script>
+const DATA = [
+  {
+    phase: "Phase 1 — Accounts and Keys",
+    tasks: [
+      {
+        id: "openai-key",
+        title: "Create OpenAI API account and generate a key",
+        tag: "manual",
+        why: "The RAG pipeline uses two different AI models from two different providers. Claude handles generation (reading the retrieved context and writing an answer). OpenAI handles embeddings (converting text into numerical vectors for similarity search). These are fundamentally different tasks — an embedding model doesn't generate language, it generates coordinates in meaning-space.",
+        steps: [
+          "Go to <a href='https://platform.openai.com/signup'>platform.openai.com/signup</a> and create an account",
+          "Go to <a href='https://platform.openai.com/account/billing'>Billing</a> → add a payment method → load $5 credit",
+          "Go to <a href='https://platform.openai.com/api-keys'>API Keys</a> → Create new secret key → name it <span class='inline-code'>case-file-assistant</span>",
+          "Copy the key immediately — OpenAI only shows it once. Save it somewhere safe"
+        ],
+        learn: "An embedding model converts text into a vector — an array of 1,536 numbers. Each number is a coordinate in a high-dimensional space. The key insight: text with similar meaning produces vectors that point in similar directions. \"The patient underwent knee surgery\" and \"Knee operation was performed\" end up near each other in vector space, even though they share almost no words. This is what makes semantic search possible — you're searching by meaning, not by keyword matching."
+      },
+      {
+        id: "supabase-project",
+        title: "Create a new Supabase project",
+        tag: "manual",
+        why: "You need an isolated database for this demo. A fresh project means no risk of interfering with your existing ChopChop/BarcodeAuto data, and when an employer inspects it they see a clean, purpose-built setup.",
+        steps: [
+          "Go to <a href='https://supabase.com/dashboard'>supabase.com/dashboard</a>",
+          "Click New Project",
+          "Name: <span class='inline-code'>case-file-assistant</span>",
+          "Set a strong database password — you won't need to type it often but save it",
+          "Region: pick the closest to you (Cape Town if available, otherwise EU West)",
+          "Wait ~2 minutes for the project to provision"
+        ],
+        learn: "A Supabase \"project\" is a fully managed PostgreSQL database instance with extras bolted on (auth, storage, real-time subscriptions, edge functions). For this project you're using it purely as a PostgreSQL database — specifically because PostgreSQL is extensible. You're about to add the pgvector extension, which gives PostgreSQL native vector storage and similarity search. This is why you don't need a separate vector database like Pinecone or Weaviate — PostgreSQL handles it with one extension."
+      },
+      {
+        id: "supabase-creds",
+        title: "Copy Supabase project URL and Service Role Key",
+        tag: "manual",
+        why: "The Vercel serverless function needs these to connect to your database. You're using the Service Role Key (not the anon key) because the serverless function is trusted server-side code that needs full database access without Row Level Security restrictions.",
+        steps: [
+          "In the Supabase dashboard → Settings (gear icon) → API",
+          "Copy the <strong>Project URL</strong> — looks like <span class='inline-code'>https://xxxxx.supabase.co</span>",
+          "Under Project API keys, copy the <span class='inline-code'>service_role</span> key (the secret one, NOT the anon/public one)",
+          "Save both — you'll paste them into Vercel and your local .env file later"
+        ],
+        learn: "Supabase gives you two API keys. The <strong>anon key</strong> is designed for client-side code (browser JS) — it respects Row Level Security (RLS) policies, so even if someone extracts it from your front end, they can only access what your RLS rules allow. The <strong>service role key</strong> bypasses RLS entirely — it has full read/write access to everything. In this project, RLS is disabled on the demo table and all database calls go through a serverless function (server-side, never exposed to the browser), so the service role key is the correct choice. Never put this key in client-side code."
+      }
+    ]
+  },
+  {
+    phase: "Phase 2 — Repo and Hosting",
+    tasks: [
+      {
+        id: "github-repo",
+        title: "Create the case-file-assistant GitHub repo",
+        tag: "manual",
+        why: "The repo is where the code lives and what Vercel watches for auto-deployment. It's also what an employer clicks on your CV — the README, commit history, and code quality are all visible.",
+        steps: [
+          "Go to <a href='https://github.com/new'>github.com/new</a>",
+          "Name: <span class='inline-code'>case-file-assistant</span>",
+          "Visibility: Public",
+          "Don't initialise with a README (you already have one)",
+          "Clone it locally: <span class='inline-code'>git clone https://github.com/coder01128/case-file-assistant.git</span>"
+        ],
+        learn: "Nothing new here — standard Git workflow. The one thing worth noting: an employer scanning your GitHub will see the commit history. Clean, descriptive commits (\"add Supabase RPC function\", \"wire up RAG pipeline\") look professional. A single commit labelled \"initial commit\" containing everything looks like a homework dump."
+      },
+      {
+        id: "push-docs",
+        title: "Push the project docs as the first commit",
+        tag: "manual",
+        why: "Getting the documentation into the repo before any code signals that you plan before you build. It also means Claude Code can read CLAUDE.md from the first session.",
+        steps: [
+          "Copy CLAUDE.md, README.md, HANDOFF.md, .env.example, and .gitignore into the cloned repo folder",
+          "Create an empty <span class='inline-code'>scripts/</span> folder and an empty <span class='inline-code'>api/</span> folder",
+          "<span class='inline-code'>git add -A</span>",
+          "<span class='inline-code'>git commit -m \"add project docs and repo structure\"</span>",
+          "<span class='inline-code'>git push origin main</span>"
+        ],
+        learn: "The CLAUDE.md file is what makes Claude Code effective on your projects. Without it, every new session starts cold — Claude Code has to infer the stack, the structure, the constraints. With it, Claude Code reads the file on session start and has full context immediately. Think of it as a briefing document for a contractor walking onto a job site."
+      },
+      {
+        id: "vercel-setup",
+        title: "Import repo to Vercel and set environment variables",
+        tag: "manual",
+        why: "Vercel serves two purposes: hosting the static front end (index.html) and running the serverless function (api/query.js) that keeps your API keys secret. Environment variables set in the Vercel dashboard are available to serverless functions at runtime but never exposed in the served HTML/JS.",
+        steps: [
+          "Go to <a href='https://vercel.com/dashboard'>vercel.com/dashboard</a> → Add New → Project → Import from GitHub → select <span class='inline-code'>case-file-assistant</span>",
+          "Framework Preset: Other",
+          "Root Directory: leave as <span class='inline-code'>./</span> (do not change this)",
+          "Go to the project's Settings → Environment Variables",
+          "Add four variables: <span class='inline-code'>SUPABASE_URL</span>, <span class='inline-code'>SUPABASE_SERVICE_KEY</span>, <span class='inline-code'>OPENAI_API_KEY</span>, <span class='inline-code'>ANTHROPIC_API_KEY</span>",
+          "Paste in the values you saved earlier"
+        ],
+        learn: "Vercel serverless functions are files in the <span class='inline-code'>/api</span> folder. Any <span class='inline-code'>.js</span> file in that folder automatically becomes an API endpoint. So <span class='inline-code'>api/query.js</span> becomes accessible at <span class='inline-code'>https://your-domain.vercel.app/api/query</span>. The function runs on Vercel's servers (Node.js runtime), not in the user's browser. This is the architectural pattern that keeps API keys safe: the browser calls your serverless function, which calls OpenAI/Claude/Supabase on the server side, and returns only the result."
+      }
+    ]
+  },
+  {
+    phase: "Phase 3 — Database Setup",
+    tasks: [
+      {
+        id: "enable-pgvector",
+        title: "Enable the pgvector extension",
+        tag: "manual",
+        why: "pgvector adds vector column types and distance operators to PostgreSQL. Without it, the database has no concept of embeddings or similarity search.",
+        steps: [
+          "In the Supabase dashboard → SQL Editor (left sidebar)",
+          "Paste the SQL below and click Run"
+        ],
+        learn: "PostgreSQL is extensible — you can add capabilities via extensions without replacing the database. pgvector is one of over 70 extensions Supabase supports. By running this one command, your PostgreSQL instance gains: a <span class='inline-code'>vector</span> column type that stores arrays of floats, the <span class='inline-code'>&lt;=&gt;</span> operator for cosine distance, the <span class='inline-code'>&lt;#&gt;</span> operator for inner product distance, and index types optimised for nearest-neighbour search. This is why the RAG community has largely moved away from dedicated vector databases for moderate-scale use cases — PostgreSQL with pgvector handles it natively.",
+        sql: "create extension if not exists vector;"
+      },
+      {
+        id: "create-table",
+        title: "Create the case_documents table",
+        tag: "manual",
+        why: "This table stores every chunk of every case file alongside its vector embedding. Each row is one chunk, not one case — a single case file may produce 1-2 rows depending on length.",
+        steps: [
+          "Still in the SQL Editor → paste the SQL below and click Run"
+        ],
+        learn: "The <span class='inline-code'>embedding vector(1536)</span> column stores exactly 1,536 floating-point numbers — the output dimension of OpenAI's text-embedding-3-small model. Every embedding model has a fixed output dimension. If you switched to a different model with, say, 768 dimensions, you'd need to change this column definition and the RPC function to match. The <span class='inline-code'>metadata jsonb</span> column uses PostgreSQL's native JSON storage. JSONB is queryable — you can filter on nested fields, index them, and use them in WHERE clauses. It's ideal for semi-structured data where not every case has the same fields populated.",
+        sql: "create table case_documents (\n  id          bigserial primary key,\n  case_id     text not null,\n  client_name text not null,\n  chunk_text  text not null,\n  embedding   vector(1536),\n  metadata    jsonb,\n  created_at  timestamptz default now()\n);"
+      },
+      {
+        id: "create-index",
+        title: "Create the IVFFlat similarity search index",
+        tag: "manual",
+        why: "Without an index, every similarity search compares the query vector against every single row (brute force). The index clusters vectors into groups so only nearby clusters are searched.",
+        steps: [
+          "SQL Editor → paste the SQL below and click Run",
+          "Important: the index can only be created after data is inserted. If the table is empty, create the index AFTER running the seed scripts in Phase 5"
+        ],
+        learn: "IVFFlat stands for Inverted File with Flat compression. It works by clustering your vectors into <span class='inline-code'>lists</span> groups (here, 20) using k-means. At search time, it finds the nearest clusters to your query vector and only does brute-force comparison within those clusters. The tradeoff: faster search, but it might miss a relevant vector that sits at the boundary of a neighbouring cluster. With 30 cases and ~60 chunks, this tradeoff is negligible — you'd need thousands of rows before it matters. The rule of thumb is <span class='inline-code'>lists = sqrt(row_count)</span>, so 20 lists for ~60 rows is generous. <span class='inline-code'>vector_cosine_ops</span> tells the index to optimise for cosine distance specifically.",
+        sql: "create index on case_documents\n  using ivfflat (embedding vector_cosine_ops)\n  with (lists = 20);"
+      },
+      {
+        id: "create-rpc",
+        title: "Create the match_documents RPC function",
+        tag: "manual",
+        why: "This is the core retrieval function. When the serverless function receives a user question, it embeds it into a vector and calls this function to find the most similar chunks in the database.",
+        steps: [
+          "SQL Editor → paste the SQL below and click Run"
+        ],
+        learn: "An RPC function in Supabase is just a PostgreSQL function that Supabase exposes as a callable endpoint. From your serverless function, you'll call it like: <span class='inline-code'>supabase.rpc('match_documents', { query_embedding: [...], match_threshold: 0.7, match_count: 5 })</span>. The expression <span class='inline-code'>1 - (embedding &lt;=&gt; query_embedding)</span> converts cosine distance into cosine similarity. The <span class='inline-code'>&lt;=&gt;</span> operator returns a distance (0 = identical, 2 = opposite). Subtracting from 1 flips it so higher = more similar. The <span class='inline-code'>match_threshold</span> of 0.7 means \"only return chunks that are at least 70% similar to the question.\" This prevents the system from returning irrelevant chunks when the question has no good match in the database.",
+        sql: "create or replace function match_documents (\n  query_embedding vector(1536),\n  match_threshold float default 0.7,\n  match_count int default 5\n)\nreturns table (\n  id bigint,\n  case_id text,\n  client_name text,\n  chunk_text text,\n  similarity float\n)\nlanguage sql stable\nas $$\n  select\n    id,\n    case_id,\n    client_name,\n    chunk_text,\n    1 - (embedding <=> query_embedding) as similarity\n  from case_documents\n  where 1 - (embedding <=> query_embedding) > match_threshold\n  order by embedding <=> query_embedding\n  limit match_count;\n$$;"
+      }
+    ]
+  },
+  {
+    phase: "Phase 4 — Build (Claude Code)",
+    tasks: [
+      {
+        id: "cc-build",
+        title: "Run the Claude Code build prompt",
+        tag: "cc",
+        why: "This is where Claude Code generates the synthetic data script, the seed/embed script, the Vercel serverless function, and the front end. All the manual setup above ensures Claude Code has a working database, valid API keys, and a documented project structure to work from.",
+        steps: [
+          "Open Claude Code in the case-file-assistant repo",
+          "Verify Claude Code reads the CLAUDE.md (it should do this automatically on session start)",
+          "Paste the build prompt (Brad will get this after confirming all prior steps are done)"
+        ],
+        learn: "You're not writing this code — Claude Code is. But you should understand the output well enough to explain it in an interview. The build produces four files: <span class='inline-code'>scripts/generate-cases.js</span> (creates synthetic data), <span class='inline-code'>scripts/seed-database.js</span> (chunks text, calls embedding API, inserts into Supabase), <span class='inline-code'>api/query.js</span> (the full RAG pipeline as a serverless function), and <span class='inline-code'>index.html</span> (the chat UI). The most important one to understand is <span class='inline-code'>api/query.js</span> — that's where the five-step RAG pipeline lives: receive question → embed it → search Supabase → build prompt with context → call Claude → return answer."
+      }
+    ]
+  },
+  {
+    phase: "Phase 5 — Seed and Deploy",
+    tasks: [
+      {
+        id: "local-env",
+        title: "Create your local .env file",
+        tag: "manual",
+        why: "The seed scripts run on your machine via Node.js, not on Vercel. They need the API keys locally to embed the synthetic case data and insert it into Supabase.",
+        steps: [
+          "In the repo folder, copy the template: <span class='inline-code'>cp .env.example .env</span>",
+          "Open <span class='inline-code'>.env</span> in a text editor and paste in your four keys",
+          "Verify .env is in .gitignore (it is — we set that up already)"
+        ],
+        learn: "The <span class='inline-code'>.env</span> file is the standard way to manage secrets in Node.js projects. Libraries like <span class='inline-code'>dotenv</span> read it on startup and inject the values into <span class='inline-code'>process.env</span>. Because it's in <span class='inline-code'>.gitignore</span>, it never reaches GitHub — your keys stay local. On Vercel, the same variables are set through the dashboard instead of a file. Same keys, different delivery mechanism depending on environment."
+      },
+      {
+        id: "install-deps",
+        title: "Install Node.js dependencies",
+        tag: "manual",
+        why: "The scripts and serverless function need packages to talk to Supabase, OpenAI, and Anthropic.",
+        steps: [
+          "In the repo folder: <span class='inline-code'>npm install</span>",
+          "This reads package.json (created by Claude Code) and installs the required packages into node_modules/"
+        ],
+        learn: "<span class='inline-code'>package.json</span> lists the exact packages and versions the project depends on. <span class='inline-code'>npm install</span> downloads them into <span class='inline-code'>node_modules/</span> (which is gitignored — dependencies are installed fresh per environment, not committed). For this project, the dependencies are likely: <span class='inline-code'>@supabase/supabase-js</span> (database client), <span class='inline-code'>openai</span> (embedding API client), <span class='inline-code'>@anthropic-ai/sdk</span> (Claude API client), and <span class='inline-code'>dotenv</span> (reads .env files)."
+      },
+      {
+        id: "run-seed",
+        title: "Run the seed scripts to populate the database",
+        tag: "manual",
+        why: "This is a two-step process. First, generate 30 synthetic case files as JSON. Then chunk each case, call the OpenAI embedding API for each chunk, and insert the chunk + vector into Supabase. This is a one-time operation.",
+        steps: [
+          "Generate the synthetic data: <span class='inline-code'>node scripts/generate-cases.js</span>",
+          "Check that <span class='inline-code'>scripts/cases.json</span> was created and contains 30 case objects",
+          "Embed and insert: <span class='inline-code'>node scripts/seed-database.js</span>",
+          "Watch for success messages — should report ~45-60 chunks inserted",
+          "If the IVFFlat index wasn't created in Phase 3 (because the table was empty), go back to the Supabase SQL Editor and run that CREATE INDEX statement now"
+        ],
+        learn: "The seed script does the heavy lifting of the entire ingestion pipeline. For each case file it: (1) splits the text into chunks of ~200-300 words at sentence boundaries, (2) sends each chunk to OpenAI's <span class='inline-code'>text-embedding-3-small</span> endpoint, which returns a 1,536-number array, and (3) inserts the chunk text, its embedding vector, and metadata into the Supabase table. The total cost for ~60 embedding calls at roughly 200 tokens each is about 12,000 tokens — at $0.02 per million tokens, that's a fraction of a cent. You could run this script a thousand times and not spend a dollar."
+      },
+      {
+        id: "deploy",
+        title: "Push to main to trigger Vercel deployment",
+        tag: "manual",
+        why: "Vercel auto-deploys on every push to the main branch. This deploys the front end (index.html) and the serverless function (api/query.js) together.",
+        steps: [
+          "<span class='inline-code'>git add -A</span>",
+          "<span class='inline-code'>git commit -m \"complete RAG pipeline with front end\"</span>",
+          "<span class='inline-code'>git push origin main</span>",
+          "Go to the Vercel dashboard — watch for the deployment to complete (usually 30-60 seconds)",
+          "Copy the live URL"
+        ],
+        learn: "Vercel's GitHub integration uses webhooks. When you push to main, GitHub sends a notification to Vercel, which pulls your code, installs dependencies from package.json, and deploys. Static files (like index.html) are served from a CDN. Files in the <span class='inline-code'>/api</span> folder are deployed as serverless functions (AWS Lambda under the hood). The whole process is automatic — no CLI commands, no manual build steps."
+      }
+    ]
+  },
+  {
+    phase: "Phase 6 — Verify",
+    tasks: [
+      {
+        id: "test-queries",
+        title: "Test the four example queries",
+        tag: "verify",
+        why: "Each query tests a different retrieval pattern. If all four return grounded, cited answers, the pipeline works end-to-end.",
+        steps: [
+          "Open the live Vercel URL",
+          "Test: \"Has the Martinez client had surgery?\" — should return a specific answer citing one case",
+          "Test: \"Which cases are with Henderson & Associates?\" — should list multiple cases",
+          "Test: \"What's the total funding across active car accident cases?\" — should aggregate from multiple chunks",
+          "Test: \"Which doctor is treating the Johnson case?\" — should extract a specific field",
+          "For each: verify the source panel shows case IDs, chunk text, and similarity scores"
+        ],
+        learn: "These four queries test different RAG capabilities. Single-fact retrieval (Martinez surgery) shows the system can find one needle in a haystack. Entity filtering (Henderson law firm) shows it handles cross-document queries. Aggregation (total funding) shows it can pull from multiple chunks and synthesise. Field extraction (Johnson's doctor) shows precision retrieval. If the answer includes information NOT in the source chunks shown, that's a hallucination — the prompt engineering isn't constraining Claude tightly enough."
+      },
+      {
+        id: "leak-test",
+        title: "Run the API key leak test",
+        tag: "verify",
+        why: "If any API key is visible in the browser, the demo is a security liability, not a portfolio piece. This test confirms the serverless function architecture is working correctly.",
+        steps: [
+          "Open the live URL in Chrome",
+          "Right-click → View Page Source — search for your Supabase URL, any API key prefix (sk-, sbp_, eyJ) — should find NOTHING",
+          "Open DevTools (F12) → Network tab → submit a query",
+          "Check the outgoing request goes to <span class='inline-code'>/api/query</span> (your serverless function) — NOT directly to api.openai.com or api.anthropic.com",
+          "Click the request → check the Payload — should contain only <span class='inline-code'>{ question: \"...\" }</span>, no keys",
+          "Console tab — should have no logged keys or tokens"
+        ],
+        learn: "This is the core security architecture of the project. The browser knows nothing about OpenAI, Anthropic, or your Supabase credentials. It sends a plain question to <span class='inline-code'>/api/query</span>. The serverless function (running on Vercel's servers) reads the API keys from environment variables, makes the three API calls (embed → search → generate), and returns only the answer and source chunks to the browser. If you see any direct calls to external APIs from the browser, something was wired wrong — the front end should ONLY talk to your own <span class='inline-code'>/api/query</span> endpoint."
+      },
+      {
+        id: "glossary-update",
+        title: "Add Case File Assistant entries to the Project Glossary",
+        tag: "manual",
+        why: "The glossary is your interview prep tool. Adding the RAG-specific terms means you can review them alongside the rest of your project vocabulary.",
+        steps: [
+          "Open a new Claude session with the glossary HTML file",
+          "Add a \"Case File Assistant\" project filter chip",
+          "Add ~11 new entries: Vector/Embedding, Cosine Similarity, pgvector, RAG, Chunking, Similarity Search, Embedding Model, Hallucination Grounding, RPC Function, Context Window Injection, Source Citation/Provenance",
+          "Cross-link to existing Supabase and Claude API entries"
+        ],
+        learn: "This step isn't technical — it's about being interview-ready. The glossary gives you a single place to review every technical term across all your projects. When an interviewer asks \"what's the difference between an embedding model and a generation model,\" you want the answer on the tip of your tongue, not buried in a handoff doc."
+      }
+    ]
+  }
+];
+
+const phasesEl = document.getElementById('phases');
+let totalTasks = 0;
+let taskStates = {};
+
+async function loadStates() {
+  try {
+    const result = await window.storage.get('checklist-states');
+    taskStates = result ? JSON.parse(result.value) : {};
+  } catch {
+    taskStates = {};
+  }
+}
+
+async function saveStates() {
+  try {
+    await window.storage.set('checklist-states', JSON.stringify(taskStates));
+  } catch { /* silent fail */ }
+}
+
+function updateProgress() {
+  const done = Object.values(taskStates).filter(Boolean).length;
+  const pct = totalTasks > 0 ? Math.round((done / totalTasks) * 100) : 0;
+  document.getElementById('progress-text').textContent = `${done} / ${totalTasks} complete`;
+  document.getElementById('progress-pct').textContent = `${pct}%`;
+  const fill = document.getElementById('progress-fill');
+  fill.style.width = `${pct}%`;
+  fill.className = 'progress-fill' + (pct === 100 ? ' complete' : '');
+
+  // update phase counts
+  DATA.forEach(phase => {
+    const phaseEl = document.getElementById('phase-count-' + phase.tasks[0].id);
+    if (!phaseEl) return;
+    const phaseDone = phase.tasks.filter(t => taskStates[t.id]).length;
+    phaseEl.textContent = `${phaseDone} / ${phase.tasks.length}`;
+  });
+}
+
+function render() {
+  phasesEl.innerHTML = '';
+  totalTasks = 0;
+
+  DATA.forEach(phase => {
+    totalTasks += phase.tasks.length;
+
+    const phaseDiv = document.createElement('div');
+    phaseDiv.className = 'phase';
+
+    const phaseDone = phase.tasks.filter(t => taskStates[t.id]).length;
+
+    phaseDiv.innerHTML = `
+      <div class="phase-header">
+        <h2>${phase.phase}</h2>
+        <span class="phase-count" id="phase-count-${phase.tasks[0].id}">${phaseDone} / ${phase.tasks.length}</span>
+      </div>
+    `;
+
+    phase.tasks.forEach(task => {
+      const isDone = !!taskStates[task.id];
+      const taskDiv = document.createElement('div');
+      taskDiv.className = 'task' + (isDone ? ' done' : '');
+      taskDiv.id = 'task-' + task.id;
+
+      const tagClass = task.tag === 'cc' ? 'cc' : task.tag === 'verify' ? 'verify' : 'manual';
+      const tagLabel = task.tag === 'cc' ? 'CLAUDE CODE' : task.tag === 'verify' ? 'VERIFY' : 'MANUAL';
+
+      let stepsHtml = '';
+      if (task.steps) {
+        stepsHtml = `<ul class="steps-list">${task.steps.map(s => `<li>${s}</li>`).join('')}</ul>`;
+      }
+
+      let sqlHtml = '';
+      if (task.sql) {
+        sqlHtml = `<pre class="sql-block">${task.sql}</pre>`;
+      }
+
+      taskDiv.innerHTML = `
+        <div class="task-row">
+          <div class="task-checkbox" data-id="${task.id}"></div>
+          <span class="task-title">${task.title}<span class="tag ${tagClass}">${tagLabel}</span></span>
+          <span class="task-expand">▼</span>
+        </div>
+        <div class="task-body">
+          <section>
+            <span class="section-label why">WHY</span>
+            <p>${task.why}</p>
+          </section>
+          <section>
+            <span class="section-label">STEPS</span>
+            ${stepsHtml}
+            ${sqlHtml}
+          </section>
+          <section>
+            <span class="section-label learn">WHAT YOU'RE LEARNING</span>
+            <p>${task.learn}</p>
+          </section>
+        </div>
+      `;
+
+      // Toggle expand
+      const row = taskDiv.querySelector('.task-row');
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('.task-checkbox')) return;
+        taskDiv.classList.toggle('open');
+      });
+
+      // Toggle checkbox
+      const checkbox = taskDiv.querySelector('.task-checkbox');
+      checkbox.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        taskStates[task.id] = !taskStates[task.id];
+        taskDiv.classList.toggle('done', taskStates[task.id]);
+        updateProgress();
+        await saveStates();
+      });
+
+      phaseDiv.appendChild(taskDiv);
+    });
+
+    phasesEl.appendChild(phaseDiv);
+  });
+
+  updateProgress();
+}
+
+(async () => {
+  await loadStates();
+  render();
+})();
+</script>
+</body>
+</html>
