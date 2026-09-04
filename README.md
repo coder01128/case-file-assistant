@@ -76,7 +76,7 @@ User question
    ```
    git push origin main
    ```
-   Vercel's GitHub integration auto-deploys. The live URL appears in the Vercel dashboard.
+   Vercel's GitHub integration auto-deploys.  The live URL appears in the Vercel dashboard.
 
 > **Note:** Do not use the Vercel CLI (`vercel`, `vercel dev`, `vercel deploy`) — deploy via `git push` only. The CLI has historically reset project settings.
 
